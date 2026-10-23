@@ -32,117 +32,189 @@ function checkAuthStatus() {
     }
 }
 
-function setupEventListeners() {
-    // Auth Switch
-    let isRegistering = false;
-    document.getElementById('auth-switch-btn').addEventListener('click', () => {
-        isRegistering = !isRegistering;
-        if (isRegistering) {
-            document.getElementById('form-login').classList.add('hidden');
-            document.getElementById('form-register').classList.remove('hidden');
-            document.getElementById('auth-title').textContent = 'Create Account';
-            document.getElementById('auth-subtitle').textContent = 'Join EventFlow today';
-            document.getElementById('auth-switch-text').textContent = 'Already have an account?';
-            document.getElementById('auth-switch-btn').textContent = 'Sign In';
+// Fungsi untuk menampilkan box pesan error di form auth
+function showAuthError(message) {
+    const errorBox = document.getElementById('auth-error-msg');
+    const errorText = document.getElementById('auth-error-text');
+    if (errorBox && errorText) {
+        if (message) {
+            errorText.textContent = message;
+            errorBox.classList.remove('hidden');
         } else {
-            document.getElementById('form-register').classList.add('hidden');
-            document.getElementById('form-login').classList.remove('hidden');
-            document.getElementById('auth-title').textContent = 'Welcome to EventFlow';
-            document.getElementById('auth-subtitle').textContent = 'Sign in to manage your campus events';
-            document.getElementById('auth-switch-text').textContent = "Don't have an account?";
-            document.getElementById('auth-switch-btn').textContent = 'Register';
+            errorBox.classList.add('hidden');
         }
-    });
+    }
+}
 
-    // Auth Form Actions
-    document.getElementById('form-login').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const email = document.getElementById('login-email').value;
-        const password = document.getElementById('login-password').value;
+// Fungsi animasi loading pada tombol
+function setButtonLoading(buttonId, isLoading, defaultText) {
+    const btn = document.getElementById(buttonId);
+    if (!btn) return;
+    if (isLoading) {
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-sm"></i><span>Processing...</span>`;
+    } else {
+        btn.disabled = false;
+        btn.innerHTML = `<span>${defaultText}</span>`;
+    }
+}
 
-        try {
-            const res = await fetch('/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error);
+function setupEventListeners() {
+    // Auth Switch (Login <-> Register)
+    let isRegistering = false;
+    const switchBtn = document.getElementById('auth-switch-btn');
+    if (switchBtn) {
+        switchBtn.addEventListener('click', () => {
+            isRegistering = !isRegistering;
+            showAuthError(null); // Bersihkan error saat pindah form
 
-            localStorage.setItem('ef_token', data.token);
-            localStorage.setItem('ef_user', JSON.stringify(data.user));
-            showToast('Login berhasil', 'success');
+            if (isRegistering) {
+                document.getElementById('form-login').classList.add('hidden');
+                document.getElementById('form-register').classList.remove('hidden');
+                document.getElementById('auth-title').textContent = 'Create Account';
+                document.getElementById('auth-subtitle').textContent = 'Join EventFlow today';
+                document.getElementById('auth-switch-text').textContent = 'Already have an account?';
+                switchBtn.textContent = 'Sign In';
+            } else {
+                document.getElementById('form-register').classList.add('hidden');
+                document.getElementById('form-login').classList.remove('hidden');
+                document.getElementById('auth-title').textContent = 'Welcome to EventFlow';
+                document.getElementById('auth-subtitle').textContent = 'Sign in to manage your campus events';
+                document.getElementById('auth-switch-text').textContent = "Don't have an account?";
+                switchBtn.textContent = 'Register';
+            }
+        });
+    }
+
+    // Login Form Submit
+    const formLogin = document.getElementById('form-login');
+    if (formLogin) {
+        formLogin.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            showAuthError(null);
+            setButtonLoading('btn-login', true, 'Sign In');
+
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.error || 'Email atau password salah.');
+                }
+
+                localStorage.setItem('ef_token', data.token);
+                localStorage.setItem('ef_user', JSON.stringify(data.user));
+                showToast('Login berhasil', 'success');
+                checkAuthStatus();
+            } catch (err) {
+                showAuthError(err.message);
+                showToast(err.message, 'error');
+            } finally {
+                setButtonLoading('btn-login', false, 'Sign In');
+            }
+        });
+    }
+
+    // Register Form Submit
+    const formRegister = document.getElementById('form-register');
+    if (formRegister) {
+        formRegister.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            showAuthError(null);
+            setButtonLoading('btn-register', true, 'Create Account');
+
+            const name = document.getElementById('reg-name').value;
+            const email = document.getElementById('reg-email').value;
+            const password = document.getElementById('reg-password').value;
+
+            try {
+                const res = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, password })
+                });
+
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.error || 'Gagal mendaftar.');
+                }
+
+                showToast('Registrasi berhasil! Silakan masuk.', 'success');
+                switchBtn.click();
+            } catch (err) {
+                showAuthError(err.message);
+                showToast(err.message, 'error');
+            } finally {
+                setButtonLoading('btn-register', false, 'Create Account');
+            }
+        });
+    }
+
+    // Logout
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+            localStorage.removeItem('ef_token');
+            localStorage.removeItem('ef_user');
             checkAuthStatus();
-        } catch (err) {
-            showToast(err.message, 'error');
-        }
-    });
+        });
+    }
 
-    document.getElementById('form-register').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const name = document.getElementById('reg-name').value;
-        const email = document.getElementById('reg-email').value;
-        const password = document.getElementById('reg-password').value;
-
-        try {
-            const res = await fetch('/api/auth/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, email, password })
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error);
-
-            showToast('Registrasi berhasil, silakan login', 'success');
-            document.getElementById('auth-switch-btn').click();
-        } catch (err) {
-            showToast(err.message, 'error');
-        }
-    });
-
-    document.getElementById('logout-btn').addEventListener('click', () => {
-        localStorage.removeItem('ef_token');
-        localStorage.removeItem('ef_user');
-        checkAuthStatus();
-    });
-
-    // Navigation
+    // Navigation Views
     document.querySelectorAll('.nav-item').forEach(btn => {
         btn.addEventListener('click', () => switchView(btn.getAttribute('data-view')));
     });
 
-    // Event Switch
-    document.getElementById('active-event-select').addEventListener('change', (e) => {
-        AppState.activeEventId = e.target.value;
-        renderAll();
-    });
+    // Active Event Selector
+    const activeEventSelect = document.getElementById('active-event-select');
+    if (activeEventSelect) {
+        activeEventSelect.addEventListener('change', (e) => {
+            AppState.activeEventId = e.target.value;
+            renderAll();
+        });
+    }
 
-    // Modals Handlers
-    document.getElementById('add-task-btn').addEventListener('click', () => openModal('modal-task'));
-    document.getElementById('quick-create-task-btn').addEventListener('click', () => openModal('modal-task'));
-    document.getElementById('add-proposal-btn').addEventListener('click', () => openModal('modal-proposal'));
-    document.getElementById('create-event-btn').addEventListener('click', () => openModal('modal-event'));
-    document.getElementById('add-budget-btn').addEventListener('click', () => openModal('modal-budget'));
+    // Modal Triggers
+    const addTaskBtn = document.getElementById('add-task-btn');
+    if (addTaskBtn) addTaskBtn.addEventListener('click', () => openModal('modal-task'));
+    const quickAddTaskBtn = document.getElementById('quick-create-task-btn');
+    if (quickAddTaskBtn) quickAddTaskBtn.addEventListener('click', () => openModal('modal-task'));
+    const addPropBtn = document.getElementById('add-proposal-btn');
+    if (addPropBtn) addPropBtn.addEventListener('click', () => openModal('modal-proposal'));
+    const createEvtBtn = document.getElementById('create-event-btn');
+    if (createEvtBtn) createEvtBtn.addEventListener('click', () => openModal('modal-event'));
+    const addBdgBtn = document.getElementById('add-budget-btn');
+    if (addBdgBtn) addBdgBtn.addEventListener('click', () => openModal('modal-budget'));
 
     document.querySelectorAll('.close-modal-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.querySelectorAll('.fixed.inset-0.z-50').forEach(m => {
-                if (m.id !== 'auth-overlay') m.classList.add('hidden');
-            });
-        });
+        btn.addEventListener('click', closeModals);
     });
 
-    // Form Submissions
-    document.getElementById('form-task').addEventListener('submit', handleTaskSubmit);
-    document.getElementById('form-proposal').addEventListener('submit', handleProposalSubmit);
-    document.getElementById('form-event').addEventListener('submit', handleEventSubmit);
-    document.getElementById('form-budget').addEventListener('submit', handleBudgetSubmit);
+    // Modal Form Submissions
+    const formTask = document.getElementById('form-task');
+    if (formTask) formTask.addEventListener('submit', handleTaskSubmit);
+    const formProp = document.getElementById('form-proposal');
+    if (formProp) formProp.addEventListener('submit', handleProposalSubmit);
+    const formEvt = document.getElementById('form-event');
+    if (formEvt) formEvt.addEventListener('submit', handleEventSubmit);
+    const formBdg = document.getElementById('form-budget');
+    if (formBdg) formBdg.addEventListener('submit', handleBudgetSubmit);
 
     // Theme Toggle
-    document.getElementById('theme-toggle').addEventListener('click', () => {
-        AppState.darkTheme = !AppState.darkTheme;
-        document.documentElement.classList.toggle('dark', AppState.darkTheme);
-    });
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+        themeToggle.addEventListener('click', () => {
+            AppState.darkTheme = !AppState.darkTheme;
+            document.documentElement.classList.toggle('dark', AppState.darkTheme);
+        });
+    }
 }
 
 function switchView(viewName) {
@@ -199,44 +271,50 @@ function renderAll() {
 }
 
 async function renderDashboard() {
-    const res = await fetch('/api/events');
-    const events = await res.json();
-    const evt = events.find(e => e.id == AppState.activeEventId);
-    if (evt) {
-        document.getElementById('dash-event-title').textContent = evt.title;
-        document.getElementById('dash-event-desc').textContent = evt.description || '';
-        document.getElementById('dash-target-attendees').textContent = evt.target_attendees;
-        document.getElementById('event-subtitle').textContent = evt.title;
-    }
+    try {
+        const res = await fetch('/api/events');
+        const events = await res.json();
+        const evt = events.find(e => e.id == AppState.activeEventId);
+        if (evt) {
+            document.getElementById('dash-event-title').textContent = evt.title;
+            document.getElementById('dash-event-desc').textContent = evt.description || '';
+            document.getElementById('dash-target-attendees').textContent = evt.target_attendees;
+            document.getElementById('event-subtitle').textContent = evt.title;
+        }
+    } catch(e) {}
 }
 
 async function renderTasks() {
-    const res = await fetch(`/api/tasks?event_id=${AppState.activeEventId}`);
-    const tasks = await res.json();
+    try {
+        const res = await fetch(`/api/tasks?event_id=${AppState.activeEventId}`);
+        const tasks = await res.json();
 
-    ['todo', 'in_progress', 'completed'].forEach(s => {
-        const container = document.getElementById(`col-${s}`);
-        container.innerHTML = '';
-        const filtered = tasks.filter(t => t.status === s);
+        ['todo', 'in_progress', 'completed'].forEach(s => {
+            const container = document.getElementById(`col-${s}`);
+            if (!container) return;
+            container.innerHTML = '';
+            const filtered = tasks.filter(t => t.status === s);
 
-        filtered.forEach(t => {
-            const card = document.createElement('div');
-            card.className = 'bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-sm space-y-2';
-            card.innerHTML = `
-                <div class="flex justify-between items-center">
-                    <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-indigo-900 text-indigo-300">${t.priority}</span>
-                    <button onclick="deleteTask(${t.id})" class="text-rose-500 text-xs"><i class="fa-solid fa-trash"></i></button>
-                </div>
-                <h4 class="font-bold text-sm text-white">${t.title}</h4>
-                <p class="text-xs text-slate-400">${t.description || ''}</p>
-            `;
-            container.appendChild(card);
+            filtered.forEach(t => {
+                const card = document.createElement('div');
+                card.className = 'bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-sm space-y-2';
+                card.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-indigo-900 text-indigo-300">${t.priority}</span>
+                        <button onclick="deleteTask(${t.id})" class="text-rose-500 text-xs"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                    <h4 class="font-bold text-sm text-white">${t.title}</h4>
+                    <p class="text-xs text-slate-400">${t.description || ''}</p>
+                `;
+                container.appendChild(card);
+            });
         });
-    });
 
-    const done = tasks.filter(t => t.status === 'completed').length;
-    const pct = tasks.length ? Math.round((done / tasks.length) * 100) : 0;
-    document.getElementById('stat-progress-pct').textContent = `${pct}%`;
+        const done = tasks.filter(t => t.status === 'completed').length;
+        const pct = tasks.length ? Math.round((done / tasks.length) * 100) : 0;
+        const statProg = document.getElementById('stat-progress-pct');
+        if (statProg) statProg.textContent = `${pct}%`;
+    } catch(e) {}
 }
 
 async function handleTaskSubmit(e) {
@@ -267,25 +345,29 @@ async function deleteTask(id) {
 }
 
 async function renderProposals() {
-    const res = await fetch(`/api/proposals?event_id=${AppState.activeEventId}`);
-    const proposals = await res.json();
-    const container = document.getElementById('proposals-list-container');
-    container.innerHTML = '';
+    try {
+        const res = await fetch(`/api/proposals?event_id=${AppState.activeEventId}`);
+        const proposals = await res.json();
+        const container = document.getElementById('proposals-list-container');
+        if (!container) return;
+        container.innerHTML = '';
 
-    document.getElementById('stat-proposals-count').textContent = proposals.filter(p => p.status === 'pending').length;
+        const statProp = document.getElementById('stat-proposals-count');
+        if (statProp) statProp.textContent = proposals.filter(p => p.status === 'pending').length;
 
-    proposals.forEach(p => {
-        const card = document.createElement('div');
-        card.className = 'bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-2';
-        card.innerHTML = `
-            <div class="flex justify-between">
-                <h3 class="font-bold text-white">${p.title}</h3>
-                <span class="text-xs uppercase px-2 py-0.5 rounded bg-amber-900 text-amber-300">${p.status}</span>
-            </div>
-            <p class="text-xs text-slate-300">${p.description}</p>
-        `;
-        container.appendChild(card);
-    });
+        proposals.forEach(p => {
+            const card = document.createElement('div');
+            card.className = 'bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-2';
+            card.innerHTML = `
+                <div class="flex justify-between">
+                    <h3 class="font-bold text-white">${p.title}</h3>
+                    <span class="text-xs uppercase px-2 py-0.5 rounded bg-amber-900 text-amber-300">${p.status}</span>
+                </div>
+                <p class="text-xs text-slate-300">${p.description}</p>
+            `;
+            container.appendChild(card);
+        });
+    } catch(e) {}
 }
 
 async function handleProposalSubmit(e) {
@@ -305,26 +387,30 @@ async function handleProposalSubmit(e) {
 }
 
 async function renderBudget() {
-    const res = await fetch(`/api/budget?event_id=${AppState.activeEventId}`);
-    const items = await res.json();
-    const tbody = document.getElementById('budget-table-body');
-    tbody.innerHTML = '';
+    try {
+        const res = await fetch(`/api/budget?event_id=${AppState.activeEventId}`);
+        const items = await res.json();
+        const tbody = document.getElementById('budget-table-body');
+        if (!tbody) return;
+        tbody.innerHTML = '';
 
-    let totalExpense = 0;
+        let totalExpense = 0;
 
-    items.forEach(b => {
-        if (b.type === 'expense') totalExpense += Number(b.amount);
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td class="p-3 font-medium text-white">${b.title}</td>
-            <td class="p-3"><span class="text-xs px-2 py-0.5 rounded ${b.type === 'expense' ? 'bg-rose-900 text-rose-300' : 'bg-emerald-900 text-emerald-300'}">${b.type}</span></td>
-            <td class="p-3 text-right font-bold">Rp ${Number(b.amount).toLocaleString('id-ID')}</td>
-            <td class="p-3 text-right"><button onclick="deleteBudget(${b.id})" class="text-rose-500 text-xs"><i class="fa-solid fa-trash"></i></button></td>
-        `;
-        tbody.appendChild(tr);
-    });
+        items.forEach(b => {
+            if (b.type === 'expense') totalExpense += Number(b.amount);
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="p-3 font-medium text-white">${b.title}</td>
+                <td class="p-3"><span class="text-xs px-2 py-0.5 rounded ${b.type === 'expense' ? 'bg-rose-900 text-rose-300' : 'bg-emerald-900 text-emerald-300'}">${b.type}</span></td>
+                <td class="p-3 text-right font-bold">Rp ${Number(b.amount).toLocaleString('id-ID')}</td>
+                <td class="p-3 text-right"><button onclick="deleteBudget(${b.id})" class="text-rose-500 text-xs"><i class="fa-solid fa-trash"></i></button></td>
+            `;
+            tbody.appendChild(tr);
+        });
 
-    document.getElementById('stat-spent-amount').textContent = `Rp ${totalExpense.toLocaleString('id-ID')}`;
+        const statSpent = document.getElementById('stat-spent-amount');
+        if (statSpent) statSpent.textContent = `Rp ${totalExpense.toLocaleString('id-ID')}`;
+    } catch(e) {}
 }
 
 async function handleBudgetSubmit(e) {
@@ -350,6 +436,7 @@ async function deleteBudget(id) {
 
 function renderEvents(events) {
     const grid = document.getElementById('all-events-grid');
+    if (!grid) return;
     grid.innerHTML = '';
     events.forEach(evt => {
         const card = document.createElement('div');
@@ -382,8 +469,11 @@ async function handleEventSubmit(e) {
 
 // Helpers
 function openModal(id) {
-    document.getElementById(id).classList.remove('hidden');
-    document.getElementById(id).classList.add('flex');
+    const m = document.getElementById(id);
+    if (m) {
+        m.classList.remove('hidden');
+        m.classList.add('flex');
+    }
 }
 
 function closeModals() {
@@ -394,128 +484,11 @@ function closeModals() {
 
 function showToast(message, type = 'info') {
     const container = document.getElementById('toast-container');
+    if (!container) return;
     const toast = document.createElement('div');
     const bg = type === 'error' ? 'bg-rose-600' : 'bg-emerald-600';
     toast.className = `${bg} text-white px-4 py-3 rounded-xl shadow-lg text-xs font-medium flex justify-between items-center`;
     toast.innerHTML = `<span>${message}</span>`;
     container.appendChild(toast);
     setTimeout(() => toast.remove(), 3000);
-}
-
-// Helper untuk menampilkan/menyembunyikan alert error auth
-function showAuthError(message) {
-    const errorBox = document.getElementById('auth-error-msg');
-    const errorText = document.getElementById('auth-error-text');
-    if (message) {
-        errorText.textContent = message;
-        errorBox.classList.remove('hidden');
-    } else {
-        errorBox.classList.add('hidden');
-    }
-}
-
-// Helper state tombol loading
-function setButtonLoading(buttonId, isLoading, defaultText) {
-    const btn = document.getElementById(buttonId);
-    if (!btn) return;
-    if (isLoading) {
-        btn.disabled = true;
-        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-sm"></i><span>Processing...</span>`;
-    } else {
-        btn.disabled = false;
-        btn.innerHTML = `<span>${defaultText}</span>`;
-    }
-}
-
-// Event Listener pada Form Auth
-function setupAuthListeners() {
-    // Switch antara Login & Register
-    let isRegistering = false;
-    document.getElementById('auth-switch-btn').addEventListener('click', () => {
-        isRegistering = !isRegistering;
-        showAuthError(null); // Sembunyikan alert error saat pindah form
-
-        if (isRegistering) {
-            document.getElementById('form-login').classList.add('hidden');
-            document.getElementById('form-register').classList.remove('hidden');
-            document.getElementById('auth-title').textContent = 'Create Account';
-            document.getElementById('auth-subtitle').textContent = 'Join EventFlow today';
-            document.getElementById('auth-switch-text').textContent = 'Already have an account?';
-            document.getElementById('auth-switch-btn').textContent = 'Sign In';
-        } else {
-            document.getElementById('form-register').classList.add('hidden');
-            document.getElementById('form-login').classList.remove('hidden');
-            document.getElementById('auth-title').textContent = 'Welcome to EventFlow';
-            document.getElementById('auth-subtitle').textContent = 'Sign in to manage your campus events';
-            document.getElementById('auth-switch-text').textContent = "Don't have an account?";
-            document.getElementById('auth-switch-btn').textContent = 'Register';
-        }
-    });
-
-    // Handle Submit Login
-    document.getElementById('form-login').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        showAuthError(null);
-        setButtonLoading('btn-login', true, 'Sign In');
-
-        const email = document.getElementById('login-email').value;
-        const password = document.getElementById('login-password').value;
-
-        try {
-            const res = await fetch('/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
-            });
-
-            const data = await res.json();
-            if (!res.ok) {
-                throw new Error(data.error || 'Gagal masuk. Periksa email & password.');
-            }
-
-            // Jika sukses
-            localStorage.setItem('ef_token', data.token);
-            localStorage.setItem('ef_user', JSON.stringify(data.user));
-            showToast('Login berhasil', 'success');
-            checkAuthStatus();
-        } catch (err) {
-            // Jika gagal -> Tampilkan Box Error & Toast
-            showAuthError(err.message);
-            showToast(err.message, 'error');
-        } finally {
-            setButtonLoading('btn-login', false, 'Sign In');
-        }
-    });
-
-    // Handle Submit Register
-    document.getElementById('form-register').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        showAuthError(null);
-        setButtonLoading('btn-register', true, 'Create Account');
-
-        const name = document.getElementById('reg-name').value;
-        const email = document.getElementById('reg-email').value;
-        const password = document.getElementById('reg-password').value;
-
-        try {
-            const res = await fetch('/api/auth/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, email, password })
-            });
-
-            const data = await res.json();
-            if (!res.ok) {
-                throw new Error(data.error || 'Gagal mendaftar. Silakan coba lagi.');
-            }
-
-            showToast('Registrasi berhasil! Silakan masuk.', 'success');
-            document.getElementById('auth-switch-btn').click();
-        } catch (err) {
-            showAuthError(err.message);
-            showToast(err.message, 'error');
-        } finally {
-            setButtonLoading('btn-register', false, 'Create Account');
-        }
-    });
 }
