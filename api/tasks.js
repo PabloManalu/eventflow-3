@@ -13,18 +13,19 @@ module.exports = async (req, res) => {
       return res.status(200).json(result.rows);
     } else if (method === 'POST') {
       const { title, description, priority, status, due_date, assignee_id, event_id: evtId } = req.body;
+      
+      if (!evtId || !title) {
+        return res.status(400).json({ error: 'Event ID dan Judul Task wajib diisi' });
+      }
+
+      // Pastikan format tanggal valid atau null
+      const formattedDueDate = due_date && due_date.trim() !== '' ? due_date : null;
+
       const result = await db.query(
         'INSERT INTO tasks (event_id, title, description, priority, status, due_date, assignee_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
-        [evtId, title, description, priority || 'medium', status || 'todo', due_date || null, assignee_id || null]
+        [evtId, title, description, priority || 'medium', status || 'todo', formattedDueDate, assignee_id || null]
       );
       return res.status(201).json(result.rows[0]);
-    } else if (method === 'PUT') {
-      const { title, description, priority, status, due_date, assignee_id } = req.body;
-      const result = await db.query(
-        'UPDATE tasks SET title=$1, description=$2, priority=$3, status=$4, due_date=$5, assignee_id=$6 WHERE id=$7 RETURNING *',
-        [title, description, priority, status, due_date, assignee_id, id]
-      );
-      return res.status(200).json(result.rows[0]);
     } else if (method === 'DELETE') {
       await db.query('DELETE FROM tasks WHERE id = $1', [id]);
       return res.status(200).json({ message: 'Task deleted' });
