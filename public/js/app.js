@@ -294,6 +294,7 @@ async function renderDashboard() {
     } catch(e) {}
 }
 
+// 1. RENDER TASKS BOARD
 async function renderTasks() {
     try {
         const res = await fetch(`/api/tasks?event_id=${AppState.activeEventId}`);
@@ -305,24 +306,29 @@ async function renderTasks() {
             container.innerHTML = '';
             const filtered = tasks.filter(t => t.status === s);
 
+            if (filtered.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-4">Belum ada task</p>`;
+                return;
+            }
+
             filtered.forEach(t => {
                 const card = document.createElement('div');
                 card.className = 'bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-2 card-hover-effect';
                 card.innerHTML = `
                     <div class="flex justify-between items-center">
-                        <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">${t.priority}</span>
+                        <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">${t.priority}</span>
                         <div class="flex items-center gap-1">
-                            <button onclick="openEditTaskModal(${t.id}, '${escapeHtml(t.title)}', '${escapeHtml(t.description || '')}', '${t.priority}', '${t.status}', '${t.due_date || ''}')" class="text-indigo-400 hover:text-indigo-300 text-xs p-1" title="Edit Task">
+                            <button onclick="openEditTaskModal(${t.id}, '${escapeHtml(t.title)}', '${escapeHtml(t.description || '')}', '${t.priority}', '${t.status}', '${t.due_date || ''}')" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 text-xs p-1" title="Edit Task">
                                 <i class="fa-solid fa-pen-to-square"></i>
                             </button>
-                            <button onclick="deleteTask(${t.id})" class="text-rose-500 hover:text-rose-400 text-xs p-1" title="Delete Task">
+                            <button onclick="deleteTask(${t.id})" class="text-rose-500 hover:text-rose-700 text-xs p-1" title="Delete Task">
                                 <i class="fa-solid fa-trash"></i>
                             </button>
                         </div>
                     </div>
                     <h4 class="font-bold text-sm text-slate-800 dark:text-white">${escapeHtml(t.title)}</h4>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">${escapeHtml(t.description || 'Tidak ada deskripsi')}</p>
-                    <div class="pt-2 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-[11px] text-slate-400">
+                    <p class="text-xs text-slate-600 dark:text-slate-300 line-clamp-2">${escapeHtml(t.description || 'Tidak ada deskripsi')}</p>
+                    <div class="pt-2 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
                         <span><i class="fa-regular fa-clock mr-1"></i> ${t.due_date || 'Tanpa deadline'}</span>
                     </div>
                 `;
@@ -413,6 +419,7 @@ async function deleteTask(id) {
     renderTasks();
 }
 
+// 2. RENDER PROPOSALS LIST
 async function renderProposals() {
     try {
         const res = await fetch(`/api/proposals?event_id=${AppState.activeEventId}`);
@@ -424,19 +431,26 @@ async function renderProposals() {
         const statProp = document.getElementById('stat-proposals-count');
         if (statProp) statProp.textContent = proposals.filter(p => p.status === 'pending').length;
 
+        if (proposals.length === 0) {
+            container.innerHTML = `<div class="p-8 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-center text-slate-400 text-xs">Belum ada proposal diajukan untuk event ini.</div>`;
+            return;
+        }
+
         proposals.forEach(p => {
             const card = document.createElement('div');
-            card.className = 'bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-2';
+            card.className = 'bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-2 card-hover-effect';
             card.innerHTML = `
-                <div class="flex justify-between">
-                    <h3 class="font-bold text-white">${p.title}</h3>
-                    <span class="text-xs uppercase px-2 py-0.5 rounded bg-amber-900 text-amber-300">${p.status}</span>
+                <div class="flex justify-between items-center">
+                    <h3 class="font-bold text-slate-800 dark:text-white text-base">${escapeHtml(p.title)}</h3>
+                    <span class="text-xs uppercase px-2.5 py-0.5 font-semibold rounded bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800">${p.status}</span>
                 </div>
-                <p class="text-xs text-slate-300">${p.description}</p>
+                <p class="text-xs text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg border border-slate-100 dark:border-slate-700/50">${escapeHtml(p.description)}</p>
             `;
             container.appendChild(card);
         });
-    } catch(e) {}
+    } catch(e) {
+        console.error(e);
+    }
 }
 
 async function handleProposalSubmit(e) {
@@ -455,6 +469,7 @@ async function handleProposalSubmit(e) {
     renderProposals();
 }
 
+// 3. RENDER BUDGET TABLE
 async function renderBudget() {
     try {
         const res = await fetch(`/api/budget?event_id=${AppState.activeEventId}`);
@@ -465,21 +480,28 @@ async function renderBudget() {
 
         let totalExpense = 0;
 
-        items.forEach(b => {
-            if (b.type === 'expense') totalExpense += Number(b.amount);
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td class="p-3 font-medium text-white">${b.title}</td>
-                <td class="p-3"><span class="text-xs px-2 py-0.5 rounded ${b.type === 'expense' ? 'bg-rose-900 text-rose-300' : 'bg-emerald-900 text-emerald-300'}">${b.type}</span></td>
-                <td class="p-3 text-right font-bold">Rp ${Number(b.amount).toLocaleString('id-ID')}</td>
-                <td class="p-3 text-right"><button onclick="deleteBudget(${b.id})" class="text-rose-500 text-xs"><i class="fa-solid fa-trash"></i></button></td>
-            `;
-            tbody.appendChild(tr);
-        });
+        if (items.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400 text-xs">Belum ada data anggaran.</td></tr>`;
+        } else {
+            items.forEach(b => {
+                if (b.type === 'expense') totalExpense += Number(b.amount);
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition-colors";
+                tr.innerHTML = `
+                    <td class="p-3.5 font-semibold text-slate-800 dark:text-slate-200">${escapeHtml(b.title)}</td>
+                    <td class="p-3.5"><span class="text-xs px-2 py-0.5 font-medium rounded ${b.type === 'expense' ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'}">${b.type.toUpperCase()}</span></td>
+                    <td class="p-3.5 text-right font-bold ${b.type === 'expense' ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}">Rp ${Number(b.amount).toLocaleString('id-ID')}</td>
+                    <td class="p-3.5 text-right"><button onclick="deleteBudget(${b.id})" class="text-rose-500 hover:text-rose-700 text-xs"><i class="fa-solid fa-trash"></i></button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
 
         const statSpent = document.getElementById('stat-spent-amount');
         if (statSpent) statSpent.textContent = `Rp ${totalExpense.toLocaleString('id-ID')}`;
-    } catch(e) {}
+    } catch(e) {
+        console.error(e);
+    }
 }
 
 async function handleBudgetSubmit(e) {
@@ -503,17 +525,36 @@ async function deleteBudget(id) {
     renderBudget();
 }
 
+// 4. RENDER ALL EVENTS GRID (Mengecek Masalah Teks Putih di Gambar)
 function renderEvents(events) {
     const grid = document.getElementById('all-events-grid');
     if (!grid) return;
     grid.innerHTML = '';
+    
+    if (events.length === 0) {
+        grid.innerHTML = `<div class="col-span-full p-8 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-center text-slate-400 text-xs">Belum ada event. Buat event pertama kamu!</div>`;
+        return;
+    }
+
     events.forEach(evt => {
+        const isActive = evt.id == AppState.activeEventId;
         const card = document.createElement('div');
-        card.className = 'bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3 card-hover-effect';
+        card.className = `bg-white dark:bg-slate-800 p-5 rounded-xl border ${isActive ? 'border-indigo-500 ring-2 ring-indigo-500/20' : 'border-slate-200 dark:border-slate-700'} shadow-sm space-y-3 card-hover-effect`;
         card.innerHTML = `
-            <h3 class="font-bold text-white text-lg">${evt.title}</h3>
-            <p class="text-xs text-slate-400">${evt.description || ''}</p>
-            <div class="text-xs text-indigo-400">Target: ${evt.target_attendees} attendees</div>
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-indigo-600 dark:text-indigo-400"><i class="fa-regular fa-calendar mr-1"></i> ${evt.event_date || 'No Date'}</span>
+                ${isActive ? `<span class="bg-indigo-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Active</span>` : ''}
+            </div>
+            <div>
+                <h3 class="font-bold text-lg text-slate-800 dark:text-white">${escapeHtml(evt.title)}</h3>
+                <p class="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 mt-1">${escapeHtml(evt.description || 'Tidak ada deskripsi')}</p>
+            </div>
+            <div class="pt-3 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between text-xs">
+                <span class="text-slate-500 dark:text-slate-400">Target: <strong class="text-slate-700 dark:text-slate-200">${evt.target_attendees || 0}</strong> attendees</span>
+                <button onclick="selectActiveEvent(${evt.id})" class="px-3 py-1.5 font-semibold text-xs rounded-lg transition-colors ${isActive ? 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300' : 'bg-indigo-600 hover:bg-indigo-700 text-white'}">
+                    ${isActive ? 'Selected' : 'Switch Context'}
+                </button>
+            </div>
         `;
         grid.appendChild(card);
     });
@@ -573,4 +614,21 @@ function showToast(message, type = 'info') {
     toast.innerHTML = `<span>${message}</span>`;
     container.appendChild(toast);
     setTimeout(() => toast.remove(), 3000);
+}
+
+// Helper fungsi sanitasi HTML aman
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>"']/g, function(m) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+    });
+}
+
+// Fungsi pembantu ganti event aktif dari daftar card
+function selectActiveEvent(eventId) {
+    AppState.activeEventId = eventId;
+    const select = document.getElementById('active-event-select');
+    if (select) select.value = eventId;
+    loadEvents();
+    showToast('Active event switched!', 'info');
 }
