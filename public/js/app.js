@@ -319,24 +319,55 @@ async function renderTasks() {
 
 async function handleTaskSubmit(e) {
     e.preventDefault();
+    
+    // 1. Validasi Active Event
+    if (!AppState.activeEventId) {
+        showToast('Gagal: Pilih event aktif terlebih dahulu!', 'error');
+        return;
+    }
+
+    const titleInput = document.getElementById('task-title-input');
+    const descInput = document.getElementById('task-desc-input');
+    const priorityInput = document.getElementById('task-priority-input');
+    const statusInput = document.getElementById('task-status-input');
+    const dateInput = document.getElementById('task-date-input');
+
     const body = {
         event_id: AppState.activeEventId,
-        title: document.getElementById('task-title-input').value,
-        description: document.getElementById('task-desc-input').value,
-        priority: document.getElementById('task-priority-input').value,
-        status: document.getElementById('task-status-input').value,
-        due_date: document.getElementById('task-date-input').value,
-        assignee_id: AppState.user.id
+        title: titleInput ? titleInput.value : '',
+        description: descInput ? descInput.value : '',
+        priority: priorityInput ? priorityInput.value : 'medium',
+        status: statusInput ? statusInput.value : 'todo',
+        due_date: dateInput && dateInput.value ? dateInput.value : null,
+        assignee_id: AppState.user ? AppState.user.id : null
     };
 
-    await fetch('/api/tasks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-    });
+    try {
+        const res = await fetch('/api/tasks', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
 
-    closeModals();
-    renderTasks();
+        const data = await res.json();
+
+        if (!res.ok) {
+            throw new Error(data.error || 'Gagal menyimpan task ke database.');
+        }
+
+        showToast('Task berhasil ditambahkan!', 'success');
+        
+        // Reset Form
+        document.getElementById('form-task').reset();
+        closeModals();
+        
+        // Refresh Tampilan Dashboard & Tasks Board
+        renderTasks();
+        renderDashboard();
+    } catch (err) {
+        console.error('Error adding task:', err);
+        showToast(err.message, 'error');
+    }
 }
 
 async function deleteTask(id) {
@@ -469,6 +500,10 @@ async function handleEventSubmit(e) {
 
 // Helpers
 function openModal(id) {
+    if (id === 'modal-task' && !AppState.activeEventId) {
+        showToast('Pilih atau buat Event terlebih dahulu!', 'error');
+        return;
+    }
     const m = document.getElementById(id);
     if (m) {
         m.classList.remove('hidden');
