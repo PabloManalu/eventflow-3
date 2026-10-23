@@ -401,3 +401,121 @@ function showToast(message, type = 'info') {
     container.appendChild(toast);
     setTimeout(() => toast.remove(), 3000);
 }
+
+// Helper untuk menampilkan/menyembunyikan alert error auth
+function showAuthError(message) {
+    const errorBox = document.getElementById('auth-error-msg');
+    const errorText = document.getElementById('auth-error-text');
+    if (message) {
+        errorText.textContent = message;
+        errorBox.classList.remove('hidden');
+    } else {
+        errorBox.classList.add('hidden');
+    }
+}
+
+// Helper state tombol loading
+function setButtonLoading(buttonId, isLoading, defaultText) {
+    const btn = document.getElementById(buttonId);
+    if (!btn) return;
+    if (isLoading) {
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-sm"></i><span>Processing...</span>`;
+    } else {
+        btn.disabled = false;
+        btn.innerHTML = `<span>${defaultText}</span>`;
+    }
+}
+
+// Event Listener pada Form Auth
+function setupAuthListeners() {
+    // Switch antara Login & Register
+    let isRegistering = false;
+    document.getElementById('auth-switch-btn').addEventListener('click', () => {
+        isRegistering = !isRegistering;
+        showAuthError(null); // Sembunyikan alert error saat pindah form
+
+        if (isRegistering) {
+            document.getElementById('form-login').classList.add('hidden');
+            document.getElementById('form-register').classList.remove('hidden');
+            document.getElementById('auth-title').textContent = 'Create Account';
+            document.getElementById('auth-subtitle').textContent = 'Join EventFlow today';
+            document.getElementById('auth-switch-text').textContent = 'Already have an account?';
+            document.getElementById('auth-switch-btn').textContent = 'Sign In';
+        } else {
+            document.getElementById('form-register').classList.add('hidden');
+            document.getElementById('form-login').classList.remove('hidden');
+            document.getElementById('auth-title').textContent = 'Welcome to EventFlow';
+            document.getElementById('auth-subtitle').textContent = 'Sign in to manage your campus events';
+            document.getElementById('auth-switch-text').textContent = "Don't have an account?";
+            document.getElementById('auth-switch-btn').textContent = 'Register';
+        }
+    });
+
+    // Handle Submit Login
+    document.getElementById('form-login').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        showAuthError(null);
+        setButtonLoading('btn-login', true, 'Sign In');
+
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+
+        try {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.error || 'Gagal masuk. Periksa email & password.');
+            }
+
+            // Jika sukses
+            localStorage.setItem('ef_token', data.token);
+            localStorage.setItem('ef_user', JSON.stringify(data.user));
+            showToast('Login berhasil', 'success');
+            checkAuthStatus();
+        } catch (err) {
+            // Jika gagal -> Tampilkan Box Error & Toast
+            showAuthError(err.message);
+            showToast(err.message, 'error');
+        } finally {
+            setButtonLoading('btn-login', false, 'Sign In');
+        }
+    });
+
+    // Handle Submit Register
+    document.getElementById('form-register').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        showAuthError(null);
+        setButtonLoading('btn-register', true, 'Create Account');
+
+        const name = document.getElementById('reg-name').value;
+        const email = document.getElementById('reg-email').value;
+        const password = document.getElementById('reg-password').value;
+
+        try {
+            const res = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, password })
+            });
+
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.error || 'Gagal mendaftar. Silakan coba lagi.');
+            }
+
+            showToast('Registrasi berhasil! Silakan masuk.', 'success');
+            document.getElementById('auth-switch-btn').click();
+        } catch (err) {
+            showAuthError(err.message);
+            showToast(err.message, 'error');
+        } finally {
+            setButtonLoading('btn-register', false, 'Create Account');
+        }
+    });
+}
