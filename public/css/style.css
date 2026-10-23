@@ -22,3 +22,72 @@ body {
 .dark .custom-scrollbar::-webkit-scrollbar-thumb {
     background: #475569;
 }
+
+/* =========================================================
+   ANIMASI MODERN TAMBAHAN (Sederhana & Halus)
+   ========================================================= */
+
+/* 1. Animasi Masuk Konten Halaman (Fade In & Slide Up) */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in {
+    animation: fadeInUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 2. Efek Hover Kartu Terangkat (Card Hover Lift) */
+.card-hover-effect {
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.card-hover-effect:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+.dark .card-hover-effect:hover {
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+}
+
+/* 3. Efek Penekanan Tombol (Button Click Scale) */
+button, .btn-interactive {
+    transition: all 0.15s ease-in-out;
+}
+
+button:active, .btn-interactive:active {
+    transform: scale(0.96);
+}
+
+/* 4. Animasi Modal Pop-up (Zoom In) */
+@keyframes modalZoomIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.animate-modal-pop {
+    animation: modalZoomIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 5. Denyut Lembut untuk Indikator Status Active */
+@keyframes softPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.08); }
+}
+
+.animate-soft-pulse {
+    animation: softPulse 2s infinite ease-in-out;
+}
