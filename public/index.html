@@ -35,61 +35,157 @@
     <!-- Toast Notification Container -->
     <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
 
-    <!-- LOGIN & REGISTER MODAL / VIEW -->
-    <div id="auth-overlay" class="fixed inset-0 z-50 bg-slate-900 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-8 shadow-2xl border border-slate-700">
-            <div class="text-center mb-6">
-                <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30 mx-auto mb-3">
-                    <i class="fa-solid font-bold fa-layer-group text-2xl"></i>
+    <!-- LOGIN & REGISTER LANDING OVERLAY -->
+    <div id="auth-overlay" class="fixed inset-0 z-50 bg-slate-950 flex items-center justify-center p-4 sm:p-6 overflow-y-auto min-h-screen">
+        
+        <!-- Background Animated Gradient Blobs -->
+        <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none animate-pulse"></div>
+        <div class="absolute bottom-1/4 right-1/3 w-80 h-80 bg-purple-600/20 rounded-full blur-3xl pointer-events-none animate-pulse" style="animation-delay: 1s;"></div>
+    
+        <!-- Main Container Card -->
+        <div class="relative z-10 bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-3xl max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 overflow-hidden shadow-2xl transition-all duration-300 animate-fade-in my-auto">
+            
+            <!-- LEFT COLUMN: Information & Branding (Hero Section) -->
+            <div class="p-8 lg:p-10 bg-gradient-to-br from-indigo-950/60 via-slate-900 to-slate-950 border-b md:border-b-0 md:border-r border-slate-800/80 flex flex-col justify-between relative overflow-hidden">
+                <div class="space-y-6 relative z-10">
+                    <!-- Logo & Brand -->
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-500 to-violet-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30 animate-bounce-slow">
+                            <i class="fa-solid font-bold fa-layer-group text-xl"></i>
+                        </div>
+                        <div>
+                            <span class="font-extrabold text-xl text-white tracking-wide block">EventFlow</span>
+                            <span class="text-[10px] text-indigo-400 font-semibold uppercase tracking-widest block -mt-1">Campus Edition</span>
+                        </div>
+                    </div>
+    
+                    <!-- Headline & Intro -->
+                    <div class="space-y-2 pt-2">
+                        <h2 class="text-2xl sm:text-3xl font-bold text-white leading-tight">
+                            Platform Kolaborasi Acara Kampus Modern
+                        </h2>
+                        <p class="text-xs sm:text-sm text-slate-400 leading-relaxed">
+                            Kelola seluruh rangkaian kepanitiaan organisasi mahasiswa mulai dari perencanaan tugas, pengajuan ide, hingga transparansi anggaran dalam satu tempat.
+                        </p>
+                    </div>
+    
+                    <!-- Feature Highlights List -->
+                    <div class="space-y-3 pt-2">
+                        <div class="flex items-start gap-3 text-slate-300 text-xs">
+                            <div class="w-6 h-6 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-500/20 mt-0.5">
+                                <i class="fa-solid fa-list-check"></i>
+                            </div>
+                            <div>
+                                <span class="font-semibold text-white block">Kanban Board Interaktif</span>
+                                <span class="text-slate-400">Pantau progres pengerjaan divisi secara real-time.</span>
+                            </div>
+                        </div>
+    
+                        <div class="flex items-start gap-3 text-slate-300 text-xs">
+                            <div class="w-6 h-6 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/20 mt-0.5">
+                                <i class="fa-solid fa-lightbulb"></i>
+                            </div>
+                            <div>
+                                <span class="font-semibold text-white block">Sistem Persetujuan Proposal</span>
+                                <span class="text-slate-400">Ajukan ide kegiatan & revisi konsep dengan mudah.</span>
+                            </div>
+                        </div>
+    
+                        <div class="flex items-start gap-3 text-slate-300 text-xs">
+                            <div class="w-6 h-6 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/20 mt-0.5">
+                                <i class="fa-solid fa-wallet"></i>
+                            </div>
+                            <div>
+                                <span class="font-semibold text-white block">Manajemen Keuangan</span>
+                                <span class="text-slate-400">Pencatatan dana masuk, sponsorship, dan pengeluaran.</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <h2 class="text-2xl font-bold text-slate-800 dark:text-white" id="auth-title">Welcome to EventFlow</h2>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1" id="auth-subtitle">Sign in to manage your campus events</p>
+    
+                <!-- Footer Badge -->
+                <div class="pt-8 text-[11px] text-slate-500 flex items-center gap-2 relative z-10">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                    <span>Terhubung langsung dengan Database Neon PostgreSQL</span>
+                </div>
             </div>
     
-            <!-- ALERT CONTAINER UNTUK PESAN ERROR GAGAL LOGIN/REGISTER -->
-            <div id="auth-error-msg" class="hidden mb-4 p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2 transition-all">
-                <i class="fa-solid fa-circle-exclamation text-base shrink-0"></i>
-                <span id="auth-error-text">Email atau password salah. Silakan coba lagi.</span>
+            <!-- RIGHT COLUMN: Interactive Form (Sign In / Register) -->
+            <div class="p-8 lg:p-10 flex flex-col justify-center bg-slate-900/50">
+                
+                <div class="mb-6">
+                    <h3 class="text-xl font-bold text-white tracking-tight" id="auth-title">Welcome Back</h3>
+                    <p class="text-xs text-slate-400 mt-1" id="auth-subtitle">Masuk ke akun kepanitiaan kamu untuk memulai</p>
+                </div>
+    
+                <!-- Alert Container untuk Pesan Gagal Login/Register -->
+                <div id="auth-error-msg" class="hidden mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2 transition-all animate-fade-in">
+                    <i class="fa-solid fa-circle-exclamation text-base shrink-0"></i>
+                    <span id="auth-error-text">Email atau password salah.</span>
+                </div>
+    
+                <!-- Login Form -->
+                <form id="form-login" class="space-y-4 transition-all duration-300">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1.5">Email Kampus / Organisasi</label>
+                        <div class="relative">
+                            <input type="email" id="login-email" required placeholder="nama@campus.edu" class="w-full bg-slate-950/80 border border-slate-800 focus:border-indigo-500 rounded-xl p-3 pl-10 text-xs text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all">
+                            <i class="fa-solid fa-envelope absolute left-3.5 top-3.5 text-slate-500 text-xs"></i>
+                        </div>
+                    </div>
+    
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1.5">Password</label>
+                        <div class="relative">
+                            <input type="password" id="login-password" required placeholder="••••••••" class="w-full bg-slate-950/80 border border-slate-800 focus:border-indigo-500 rounded-xl p-3 pl-10 text-xs text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all">
+                            <i class="fa-solid fa-lock absolute left-3.5 top-3.5 text-slate-500 text-xs"></i>
+                        </div>
+                    </div>
+    
+                    <button type="submit" id="btn-login" class="w-full py-3 px-4 text-xs font-bold bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl transition-all shadow-lg shadow-indigo-600/25 active:scale-[0.98] flex items-center justify-center gap-2">
+                        <span>Sign In</span>
+                    </button>
+                </form>
+    
+                <!-- Register Form (Hidden by Default) -->
+                <form id="form-register" class="space-y-4 transition-all duration-300 hidden">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1.5">Nama Lengkap</label>
+                        <div class="relative">
+                            <input type="text" id="reg-name" required placeholder="John Doe" class="w-full bg-slate-950/80 border border-slate-800 focus:border-emerald-500 rounded-xl p-3 pl-10 text-xs text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all">
+                            <i class="fa-solid fa-user absolute left-3.5 top-3.5 text-slate-500 text-xs"></i>
+                        </div>
+                    </div>
+    
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1.5">Email Kampus</label>
+                        <div class="relative">
+                            <input type="email" id="reg-email" required placeholder="nama@campus.edu" class="w-full bg-slate-950/80 border border-slate-800 focus:border-emerald-500 rounded-xl p-3 pl-10 text-xs text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all">
+                            <i class="fa-solid fa-envelope absolute left-3.5 top-3.5 text-slate-500 text-xs"></i>
+                        </div>
+                    </div>
+    
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1.5">Password</label>
+                        <div class="relative">
+                            <input type="password" id="reg-password" required placeholder="Buat password aman" class="w-full bg-slate-950/80 border border-slate-800 focus:border-emerald-500 rounded-xl p-3 pl-10 text-xs text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all">
+                            <i class="fa-solid fa-lock absolute left-3.5 top-3.5 text-slate-500 text-xs"></i>
+                        </div>
+                    </div>
+    
+                    <button type="submit" id="btn-register" class="w-full py-3 px-4 text-xs font-bold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl transition-all shadow-lg shadow-emerald-600/25 active:scale-[0.98] flex items-center justify-center gap-2">
+                        <span>Create Account</span>
+                    </button>
+                </form>
+    
+                <!-- Switch Mode Button -->
+                <div class="mt-6 pt-4 border-t border-slate-800/60 text-center text-xs text-slate-400">
+                    <span id="auth-switch-text">Belum memiliki akun?</span>
+                    <button id="auth-switch-btn" class="text-indigo-400 hover:text-indigo-300 font-bold ml-1 transition-colors">Daftar Sekarang</button>
+                </div>
+    
             </div>
     
-            <!-- Login Form -->
-            <form id="form-login" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Email</label>
-                    <input type="email" id="login-email" required class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Password</label>
-                    <input type="password" id="login-password" required class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-                </div>
-                <button type="submit" id="btn-login" class="w-full py-2.5 text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors shadow-md flex items-center justify-center gap-2">
-                    <span>Sign In</span>
-                </button>
-            </form>
-    
-            <!-- Register Form -->
-            <form id="form-register" class="space-y-4 hidden">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Full Name</label>
-                    <input type="text" id="reg-name" required class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Email</label>
-                    <input type="email" id="reg-email" required class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Password</label>
-                    <input type="password" id="reg-password" required class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-                </div>
-                <button type="submit" id="btn-register" class="w-full py-2.5 text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors shadow-md flex items-center justify-center gap-2">
-                    <span>Create Account</span>
-                </button>
-            </form>
-    
-            <div class="mt-6 text-center text-xs text-slate-500 dark:text-slate-400">
-                <span id="auth-switch-text">Don't have an account?</span>
-                <button id="auth-switch-btn" class="text-indigo-500 hover:underline font-semibold ml-1">Register</button>
-            </div>
         </div>
     </div>
     
