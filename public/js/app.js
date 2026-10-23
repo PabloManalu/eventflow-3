@@ -307,14 +307,24 @@ async function renderTasks() {
 
             filtered.forEach(t => {
                 const card = document.createElement('div');
-                card.className = 'bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-2 card-hover-effect cursor-pointer';
+                card.className = 'bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-2 card-hover-effect';
                 card.innerHTML = `
                     <div class="flex justify-between items-center">
-                        <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-indigo-900 text-indigo-300">${t.priority}</span>
-                        <button onclick="deleteTask(${t.id})" class="text-rose-500 text-xs"><i class="fa-solid fa-trash"></i></button>
+                        <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">${t.priority}</span>
+                        <div class="flex items-center gap-1">
+                            <button onclick="openEditTaskModal(${t.id}, '${escapeHtml(t.title)}', '${escapeHtml(t.description || '')}', '${t.priority}', '${t.status}', '${t.due_date || ''}')" class="text-indigo-400 hover:text-indigo-300 text-xs p-1" title="Edit Task">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <button onclick="deleteTask(${t.id})" class="text-rose-500 hover:text-rose-400 text-xs p-1" title="Delete Task">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
                     </div>
-                    <h4 class="font-bold text-sm text-white">${t.title}</h4>
-                    <p class="text-xs text-slate-400">${t.description || ''}</p>
+                    <h4 class="font-bold text-sm text-slate-800 dark:text-white">${escapeHtml(t.title)}</h4>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">${escapeHtml(t.description || 'Tidak ada deskripsi')}</p>
+                    <div class="pt-2 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-[11px] text-slate-400">
+                        <span><i class="fa-regular fa-clock mr-1"></i> ${t.due_date || 'Tanpa deadline'}</span>
+                    </div>
                 `;
                 container.appendChild(card);
             });
@@ -324,58 +334,76 @@ async function renderTasks() {
         const pct = tasks.length ? Math.round((done / tasks.length) * 100) : 0;
         const statProg = document.getElementById('stat-progress-pct');
         if (statProg) statProg.textContent = `${pct}%`;
-    } catch(e) {}
+    } catch(e) {
+        console.error(e);
+    }
 }
 
-async function handleTaskSubmit(e) {
-    e.preventDefault();
-    
-    // 1. Validasi Active Event
+// Membuka modal untuk membuat task baru
+function openTaskModal() {
     if (!AppState.activeEventId) {
-        showToast('Gagal: Pilih event aktif terlebih dahulu!', 'error');
+        showToast('Pilih atau buat Event terlebih dahulu!', 'error');
         return;
     }
+    document.getElementById('form-task').reset();
+    document.getElementById('task-id').value = ''; // Kosongkan ID (tanda buat baru)
+    openModal('modal-task');
+}
 
-    const titleInput = document.getElementById('task-title-input');
-    const descInput = document.getElementById('task-desc-input');
-    const priorityInput = document.getElementById('task-priority-input');
-    const statusInput = document.getElementById('task-status-input');
-    const dateInput = document.getElementById('task-date-input');
+// Membuka modal dengan data task yang sudah ada untuk diedit
+function openEditTaskModal(id, title, description, priority, status, dueDate) {
+    if (!AppState.activeEventId) return;
+    
+    document.getElementById('task-id').value = id;
+    document.getElementById('task-title-input').value = title;
+    document.getElementById('task-desc-input').value = description;
+    document.getElementById('task-priority-input').value = priority;
+    document.getElementById('task-status-input').value = status;
+    document.getElementById('task-date-input').value = dueDate && dueDate !== 'null' ? dueDate : '';
+    
+    openModal('modal-task');
+}
 
+// Handler Submit yang mendukung Create & Update (PUT)
+async function handleTaskSubmit(e) {
+    e.preventDefault();
+    if (!AppState.activeEventId) return;
+
+    const taskId = document.getElementById('task-id').value;
     const body = {
         event_id: AppState.activeEventId,
-        title: titleInput ? titleInput.value : '',
-        description: descInput ? descInput.value : '',
-        priority: priorityInput ? priorityInput.value : 'medium',
-        status: statusInput ? statusInput.value : 'todo',
-        due_date: dateInput && dateInput.value ? dateInput.value : null,
+        title: document.getElementById('task-title-input').value,
+        description: document.getElementById('task-desc-input').value,
+        priority: document.getElementById('task-priority-input').value,
+        status: document.getElementById('task-status-input').value,
+        due_date: document.getElementById('task-date-input').value || null,
         assignee_id: AppState.user ? AppState.user.id : null
     };
 
     try {
-        const res = await fetch('/api/tasks', {
-            method: 'POST',
+        let url = '/api/tasks';
+        let method = 'POST';
+
+        // Jika task-id ada isinya, gunakan method PUT untuk update
+        if (taskId) {
+            url = `/api/tasks?id=${taskId}`;
+            method = 'PUT';
+        }
+
+        const res = await fetch(url, {
+            method: method,
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body)
         });
 
         const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Gagal menyimpan task.');
 
-        if (!res.ok) {
-            throw new Error(data.error || 'Gagal menyimpan task ke database.');
-        }
-
-        showToast('Task berhasil ditambahkan!', 'success');
-        
-        // Reset Form
-        document.getElementById('form-task').reset();
+        showToast(taskId ? 'Task berhasil diperbarui!' : 'Task berhasil ditambahkan!', 'success');
         closeModals();
-        
-        // Refresh Tampilan Dashboard & Tasks Board
         renderTasks();
         renderDashboard();
     } catch (err) {
-        console.error('Error adding task:', err);
         showToast(err.message, 'error');
     }
 }
