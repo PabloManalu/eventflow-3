@@ -221,19 +221,29 @@ function switchView(viewName) {
     AppState.currentView = viewName;
     ['dashboard', 'tasks', 'proposals', 'budget', 'events'].forEach(v => {
         const sec = document.getElementById(`view-${v}`);
-        if (sec) sec.classList.add('hidden');
+        if (sec) {
+            sec.classList.add('hidden');
+            sec.classList.remove('animate-fade-in'); // Reset animasi
+        }
     });
-    document.getElementById(`view-${viewName}`).classList.remove('hidden');
+
+    const activeSec = document.getElementById(`view-${viewName}`);
+    if (activeSec) {
+        activeSec.classList.remove('hidden');
+        // Tambahkan class animasi agar konten muncul secara halus
+        activeSec.classList.add('animate-fade-in');
+    }
 
     document.querySelectorAll('.nav-item').forEach(btn => {
         if (btn.getAttribute('data-view') === viewName) {
-            btn.className = 'nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-white bg-indigo-600';
+            btn.className = 'nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-white bg-indigo-600 shadow-md shadow-indigo-600/30';
         } else {
             btn.className = 'nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-slate-800 text-slate-400 hover:text-white';
         }
     });
 
-    document.getElementById('view-title').textContent = viewName.toUpperCase();
+    const titleElem = document.getElementById('view-title');
+    if (titleElem) titleElem.textContent = viewName.toUpperCase();
 }
 
 async function loadEvents() {
@@ -297,7 +307,7 @@ async function renderTasks() {
 
             filtered.forEach(t => {
                 const card = document.createElement('div');
-                card.className = 'bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-sm space-y-2';
+                card.className = 'bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-2 card-hover-effect cursor-pointer';
                 card.innerHTML = `
                     <div class="flex justify-between items-center">
                         <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-indigo-900 text-indigo-300">${t.priority}</span>
@@ -471,7 +481,7 @@ function renderEvents(events) {
     grid.innerHTML = '';
     events.forEach(evt => {
         const card = document.createElement('div');
-        card.className = 'bg-slate-800 p-5 rounded-xl border border-slate-700 space-y-3';
+        card.className = 'bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3 card-hover-effect';
         card.innerHTML = `
             <h3 class="font-bold text-white text-lg">${evt.title}</h3>
             <p class="text-xs text-slate-400">${evt.description || ''}</p>
@@ -508,6 +518,15 @@ function openModal(id) {
     if (m) {
         m.classList.remove('hidden');
         m.classList.add('flex');
+        
+        // Tambahkan efek animasi zoom-in pada dialog modal
+        const dialog = m.querySelector('div');
+        if (dialog) {
+            dialog.classList.remove('animate-modal-pop');
+            // Trigger reflow kecil agar animasi berjalan kembali jika dibuka ulang
+            void dialog.offsetWidth; 
+            dialog.classList.add('animate-modal-pop');
+        }
     }
 }
 
